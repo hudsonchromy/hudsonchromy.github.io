@@ -141,6 +141,7 @@ document.body.onmouseup = function() {
 }
 
 function BFS() {
+  setre();
   opt("nothing");
   var queue = [start];
   checked = [];
@@ -179,6 +180,7 @@ function BFS() {
 }
 
 function DFS() {
+  setre();
   opt("nothing");
   checked = [];
   path = [];
