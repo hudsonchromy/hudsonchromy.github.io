@@ -10,22 +10,25 @@ let checked;
 let size = 20;
 let drawi;
 let mode;
+let canvasSize = 601;
 
 function setup() {
   drawi = 0;
-  //mode = "drag";
+  canvasSize = Math.floor(Math.min(window.innerHeight * 0.8, window.innerWidth));
+  console.log(canvasSize);
   searchSpace = [];
   document.getElementById("sizeDropdown").innerText = 'Size: ' + size;
   path = [];
   start = [Math.floor(size/2), Math.floor(size/2)];
   end = [size - 1, size - 1];
-  createCanvas(601, 601);
+  createCanvas(canvasSize, canvasSize);
   grid = new Array(50);
-  cellSize = 600 / size;
+  cellSize = (canvasSize - 1) / size;
   for (var i = 0; i < grid.length; i++) {
     grid[i] = new Array(grid.length);
     for (var j = 0; j < grid.length; j++) {
       grid[i][j] = new Cell(i * cellSize, j * cellSize, cellSize, i, j);
+      grid[i][j].show();
     }
   }
 }
@@ -58,6 +61,14 @@ function draw() {
       grid[start[0]][start[1]].setColorEdge();
     }
   }
+  else if (mode == "end") {
+    if (mouseDown == 1 && mouseY >= 0) {
+      grid[end[0]][end[1]].setColorNothing();
+      end = [Math.floor(mouseX / cellSize) , Math.floor(mouseY / cellSize)];
+      grid[end[0]][end[1]].setColorEdge();
+
+    }
+  }
   if (done) {
     if (drawi < checked.length) {
       c = checked[drawi];
@@ -78,6 +89,8 @@ function draw() {
 }
 
 function setre() {
+  document.getElementById("searchSpace").innerText = 'Search Space: ';
+  document.getElementById("pathLength").innerText = 'Path Length: ';
   drawi = 0;
   done = false;
   for (var i = 0; i < grid.length; i++) {
@@ -97,6 +110,8 @@ function resize(s) {
 }
 
 function reset() {
+  document.getElementById("searchSpace").innerText = 'Search Space: ';
+  document.getElementById("pathLength").innerText = 'Path Length: ';
   drawi = 0;
   done = false;
   for (var i = 0; i < grid.length; i++) {
@@ -176,6 +191,7 @@ function BFS() {
   }
   console.log("not found");
   document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
+  document.getElementById("pathLength").innerText = 'Path Length: N/A';
   done = true;
 }
 
@@ -200,7 +216,6 @@ function DFS() {
     checked.push(current);
     if (end[0] == current[0] && end[1] == current[1]) {
       done = true;
-      checked.push([2,0]);   
       backtrack();
       document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
       document.getElementById("pathLength").innerText = 'Path Length: ' + path.length;
@@ -215,9 +230,54 @@ function DFS() {
     }
   }
   document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
+  document.getElementById("pathLength").innerText = 'Path Length: N/A';
   done = true;
 }
 
+function AStar() {
+  setre();
+  opt("nothing");
+  var queue = [start];
+  checked = [];
+  path = []
+  bt = new Array(size);
+  for (var i = 0; i < bt.length; i++) {
+    bt[i] = new Array(bt.length);
+    for (var j = 0; j < bt.length; j++) {
+      bt[i][j] = -1;
+    }
+  }
+  bt[start[0]][start[1]] = [start[0], start[1]];
+  grid[start[0]][start[1]].setG(0);
+  last = queue[0];
+  checked = [];
+  while (queue.length != 0) {
+    queue.sort(function(a,b){
+      return grid[a[0]][a[1]].getF() - grid[b[0]][b[1]].getF();
+    });
+    current = queue.shift();
+    if (end[0] == current[0] && end[1] == current[1]) {
+      done = true;
+      backtrack();
+      document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
+      document.getElementById("pathLength").innerText = 'Path Length: ' + path.length;
+      return;
+    }
+    for (t = 0; t < 4; t++) {
+      if (canMove(t, current)) {
+        next = move(t, current);
+        grid[next[0]][next[1]].setG(grid[current[0]][current[1]].getG() + 1);
+        checked.push(next);
+        queue.push(next);
+        bt[next[0]][next[1]] = current;
+      }
+    }
+  }
+  console.log("not found");
+  document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
+  document.getElementById("pathLength").innerText = 'Path Length: N/A';
+  done = true;
+}
 
 function backtrack() {
   path = [];
@@ -273,7 +333,33 @@ class Cell {
     this.b = 85;
     this.available = false;
     this.changed = false;
+    this.h = -1;
+    this.f = -1;
   }
+  //the distance gone
+  setG(g) {
+    this.g = g;
+  }
+  getG() {
+    return this.g;
+  }
+  //the manhatton distance to end
+  setH(h) {
+    this.g = g;
+  }
+  getH() {
+    if (this.h == -1) {
+      this.h = Math.sqrt(Math.pow(Math.abs(this.i - end[0]), 2) + Math.pow(Math.abs(this.j - end[1]), 2));
+    }
+    return this.h;
+  }
+  getF() {
+    if (this.f == -1) {
+      this.f = this.getH() + this.getG();
+    }
+    return this.f;
+  }
+
   setAvailable(a) {
     this.available = a;
   }
@@ -319,10 +405,8 @@ class Cell {
 
   show() {
     stroke(255);
-    strokeWeight(0);
+    strokeWeight(0.1);
     fill(this.r, this.g, this.b);
     rect(this.x, this.y, this.cellSize, this.cellSize);
   }
 }
-
-
