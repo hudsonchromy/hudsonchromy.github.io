@@ -20,9 +20,9 @@
     <div class="btn-group">
         <button onclick="reset()">Reset</button>
         <button onclick="setre()">Set</button>
-        <button onclick="BFS()">BFS</button>
-        <button onclick="DFS()">DFS</button>
-        <button onclick="AStar()">A-Star</button>
+        <button onclick="search('BFS')">BFS</button>
+        <button onclick="search('DFS')">DFS</button>
+        <button onclick="search('AStar')">A-Star</button>
         <div class="dropdown">
             <button class="dropbtn" id="dropdown">Mode</button>
             <div class="dropdown-content">
@@ -37,10 +37,10 @@
             <div class="dropdown-content">
                 <a onclick='resize(1)'>+</a>
                 <a onclick='resize(-1)'>-</a>
-                <a onclick='resize(10)'>10</a>
                 <a onclick='resize(20)'>20</a>
-                <a onclick='resize(40)'>40</a>
                 <a onclick='resize(50)'>50</a>
+                <a onclick='resize(80)'>80</a>
+                <a onclick='resize(100)'>100</a>
             </div>
         </div>
     </div>

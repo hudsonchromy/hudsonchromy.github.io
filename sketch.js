@@ -7,23 +7,23 @@ let path;
 let done;
 let bt;
 let checked;
-let size = 20;
+let size = 50;
 let drawi;
 let mode;
-let canvasSize = 601;
+let canvasSize;
+let time = 0;
 
 function setup() {
   drawi = 0;
   canvasSize = Math.floor(Math.min(window.innerHeight * 0.8, window.innerWidth));
-  console.log(canvasSize);
   searchSpace = [];
   document.getElementById("sizeDropdown").innerText = 'Size: ' + size;
   path = [];
   start = [Math.floor(size/2), Math.floor(size/2)];
   end = [size - 1, size - 1];
   createCanvas(canvasSize, canvasSize);
-  grid = new Array(50);
-  cellSize = (canvasSize - 1) / size;
+  grid = new Array(size);
+  cellSize = Math.floor((canvasSize - 10) / size);
   for (var i = 0; i < grid.length; i++) {
     grid[i] = new Array(grid.length);
     for (var j = 0; j < grid.length; j++) {
@@ -35,14 +35,15 @@ function setup() {
 
 function draw() {
   if (mode == "drag") {
-    if (mouseX > 0 && mouseX < 600 && mouseY > 0 && mouseY < 600) {
-      grid[Math.floor(mouseX / cellSize)][Math.floor(mouseY / cellSize)].setAvailable(true);
-      grid[Math.floor(mouseX / cellSize)][Math.floor(mouseY / cellSize)].setColorAvailable();
+    if (mouseX > 0 && mouseX < canvasSize - 1 && mouseY > 0 && mouseY < canvasSize - 1) {
+      grid[gridPane(mouseX)][gridPane(mouseY)].setAvailable(true);
+      grid[gridPane(mouseX)][gridPane(mouseY)].setColorAvailable();
     }
   }
   else if (mode == "click") {
-    if (mouseDown == 1 && mouseY >= 0) {
-      node = [Math.floor(mouseX / cellSize) , Math.floor(mouseY / cellSize)];
+    if (mouseDown == 1 && mouseY >= 0 && (Date.now() - time) > 200) {
+      time = Date.now();
+      node = [gridPane(mouseX) , gridPane(mouseY)];
       if (grid[node[0]][node[1]].getAvailable()) {
         grid[node[0]][node[1]].setAvailable(false);
         grid[node[0]][node[1]].setColorNothing();
@@ -57,14 +58,15 @@ function draw() {
   else if (mode == "start") {
     if (mouseDown == 1 && mouseY >= 0) {
       grid[start[0]][start[1]].setColorNothing();
-      start = [Math.floor(mouseX / cellSize) , Math.floor(mouseY / cellSize)];
+      grid[start[0]][start[1]].setAvailable(false);
+      start = [gridPane(mouseX) , gridPane(mouseY)];
       grid[start[0]][start[1]].setColorEdge();
     }
   }
   else if (mode == "end") {
     if (mouseDown == 1 && mouseY >= 0) {
       grid[end[0]][end[1]].setColorNothing();
-      end = [Math.floor(mouseX / cellSize) , Math.floor(mouseY / cellSize)];
+      end = [gridPane(mouseX) , gridPane(mouseY)];
       grid[end[0]][end[1]].setColorEdge();
 
     }
@@ -88,6 +90,10 @@ function draw() {
   grid[end[0]][end[1]].setColorEdge();
 }
 
+function gridPane(x) {
+  return Math.min(Math.floor(x / cellSize), size - 1);
+}
+
 function setre() {
   document.getElementById("searchSpace").innerText = 'Search Space: ';
   document.getElementById("pathLength").innerText = 'Path Length: ';
@@ -105,7 +111,16 @@ function setre() {
   grid[end[0]][end[1]].setColorEdge();
 }
 function resize(s) {
-  size = s;
+  reset();
+  if (s == 1 || s == -1) {
+    size += s;
+    if (size == 0) {
+      size = 1;
+    }
+  }
+  else {
+    size = s;
+  }
   setup();
 }
 
@@ -118,6 +133,7 @@ function reset() {
     for (var j = 0; j < grid.length; j++) {
       grid[i][j].setAvailable(false);
       grid[i][j].setColorNothing();
+      grid[i][j].setGHF();
     }
   }
   grid[start[0]][start[1]].setColorEdge();
@@ -147,7 +163,7 @@ function opt(option) {
   }
 }
 
-var mouseDown = 0;
+let mouseDown = 0;
 document.body.onmousedown = function() { 
   ++mouseDown;
 }
@@ -155,86 +171,8 @@ document.body.onmouseup = function() {
   --mouseDown;
 }
 
-function BFS() {
-  setre();
-  opt("nothing");
-  var queue = [start];
-  checked = [];
-  path = []
-  bt = new Array(size);
-  for (var i = 0; i < bt.length; i++) {
-    bt[i] = new Array(bt.length);
-    for (var j = 0; j < bt.length; j++) {
-      bt[i][j] = -1;
-    }
-  }
-  bt[start[0]][start[1]] = [start[0], start[1]];
-  last = queue[0];
-  checked = [];
-  while (queue.length != 0) {
-    current = queue.shift();
-    if (end[0] == current[0] && end[1] == current[1]) {
-      done = true;
-      backtrack();
-      document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
-      document.getElementById("pathLength").innerText = 'Path Length: ' + path.length;
-      return;
-    }
-    for (t = 0; t < 4; t++) {
-      if (canMove(t, current)) {
-        next = move(t, current);
-        checked.push(next);
-        queue.push(next);
-        bt[next[0]][next[1]] = current;
-      }
-    }
-  }
-  console.log("not found");
-  document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
-  document.getElementById("pathLength").innerText = 'Path Length: N/A';
-  done = true;
-}
-
-function DFS() {
-  setre();
-  opt("nothing");
-  checked = [];
-  path = [];
-  var queue = [start];
-  bt = new Array(size);
-  for (var i = 0; i < bt.length; i++) {
-    bt[i] = new Array(bt.length);
-    for (var j = 0; j < bt.length; j++) {
-      bt[i][j] = -1;
-    }
-  }
-  bt[start[0]][start[1]] = [start[0], start[1]];
-  last = queue[0];
-  checked = [];
-  while (queue.length != 0) {
-    current = queue.pop();
-    checked.push(current);
-    if (end[0] == current[0] && end[1] == current[1]) {
-      done = true;
-      backtrack();
-      document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
-      document.getElementById("pathLength").innerText = 'Path Length: ' + path.length;
-      return;
-    }
-    for (t = 0; t < 4; t++) {
-      if (canMove(t, current)) {
-        next = move(t, current);
-        queue.push(next);
-        bt[next[0]][next[1]] = current;
-      }
-    }
-  }
-  document.getElementById("searchSpace").innerText = 'Search Space: ' + checked.length;
-  document.getElementById("pathLength").innerText = 'Path Length: N/A';
-  done = true;
-}
-
-function AStar() {
+function search(choice) {
+  grid[end[0]][end[1]].setAvailable(false);
   setre();
   opt("nothing");
   var queue = [start];
@@ -252,10 +190,18 @@ function AStar() {
   last = queue[0];
   checked = [];
   while (queue.length != 0) {
-    queue.sort(function(a,b){
-      return grid[a[0]][a[1]].getF() - grid[b[0]][b[1]].getF();
-    });
-    current = queue.shift();
+    if (choice == "DFS") {
+      current = queue.pop();
+    }
+    else {
+      if (choice == "AStar") {
+        queue.sort(function(a,b){
+          return grid[a[0]][a[1]].getF() - grid[b[0]][b[1]].getF();
+        });
+      }
+      current = queue.shift();
+    }
+    checked.push(current);
     if (end[0] == current[0] && end[1] == current[1]) {
       done = true;
       backtrack();
@@ -266,10 +212,11 @@ function AStar() {
     for (t = 0; t < 4; t++) {
       if (canMove(t, current)) {
         next = move(t, current);
-        grid[next[0]][next[1]].setG(grid[current[0]][current[1]].getG() + 1);
-        checked.push(next);
         queue.push(next);
         bt[next[0]][next[1]] = current;
+        if (choice == "AStar") {
+          grid[next[0]][next[1]].setG(grid[current[0]][current[1]].getG() + 1);
+        }
       }
     }
   }
@@ -335,21 +282,27 @@ class Cell {
     this.changed = false;
     this.h = -1;
     this.f = -1;
+    this.gv = -1;
+  }
+  setGHF() {
+    this.h = -1;
+    this.g = -1;
+    this.f = -1;
   }
   //the distance gone
-  setG(g) {
-    this.g = g;
-  }
+  setG(gv) {
+    this.gv = gv;
+  } 
   getG() {
-    return this.g;
+    if (this.gv == -1) {
+      this.gv = grid[bt[this.i][this.j][0]][bt[this.i][this.j][1]].getG() + 1;
+    }
+    return this.gv;
   }
   //the manhatton distance to end
-  setH(h) {
-    this.g = g;
-  }
   getH() {
     if (this.h == -1) {
-      this.h = Math.sqrt(Math.pow(Math.abs(this.i - end[0]), 2) + Math.pow(Math.abs(this.j - end[1]), 2));
+      this.h = Math.sqrt(Math.pow(this.i - end[0], 2) + Math.pow(this.j - end[1], 2));
     }
     return this.h;
   }
@@ -401,12 +354,13 @@ class Cell {
     this.g = g;
     this.b = b;
     this.show();
+    this.show();
   }
 
   show() {
-    stroke(255);
-    strokeWeight(0.1);
+    stroke(150, 150, 150);
     fill(this.r, this.g, this.b);
+    strokeWeight(0.1);
     rect(this.x, this.y, this.cellSize, this.cellSize);
   }
 }
