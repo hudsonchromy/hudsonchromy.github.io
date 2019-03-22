@@ -12,9 +12,13 @@ let drawi;
 let mode;
 let canvasSize;
 let time = 0;
+let drawon;
+let sp;
 
 function setup() {
   drawi = 0;
+  drawon = 0;
+  sp = 1;
   canvasSize = Math.floor(Math.min(window.innerHeight * 0.8, window.innerWidth));
   searchSpace = [];
   document.getElementById("sizeDropdown").innerText = 'Size: ' + size;
@@ -72,6 +76,9 @@ function draw() {
     }
   }
   if (done) {
+    drawon += sp;
+  }
+  while (done && drawi < drawon) {
     if (drawi < checked.length) {
       c = checked[drawi];
       grid[c[0]][c[1]].setColorChecked();
@@ -95,6 +102,7 @@ function gridPane(x) {
 }
 
 function setre() {
+  drawon = 0;
   document.getElementById("searchSpace").innerText = 'Search Space: ';
   document.getElementById("pathLength").innerText = 'Path Length: ';
   drawi = 0;
@@ -125,6 +133,7 @@ function resize(s) {
 }
 
 function reset() {
+  drawon = 0;
   document.getElementById("searchSpace").innerText = 'Search Space: ';
   document.getElementById("pathLength").innerText = 'Path Length: ';
   drawi = 0;
@@ -138,6 +147,16 @@ function reset() {
   }
   grid[start[0]][start[1]].setColorEdge();
   grid[end[0]][end[1]].setColorEdge();
+}
+
+function speed(s) {
+  if (s == -1) {
+    drawon = checked.length + path.length + 1;
+  }
+  else {
+    sp = s;
+    document.getElementById("speedDropdown").innerText = 'Speed: ' + s;
+  }
 }
 
 function opt(option) {
