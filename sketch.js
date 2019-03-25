@@ -112,6 +112,7 @@ function setre() {
       if (!grid[i][j].getAvailable()) {
         grid[i][j].setAvailable(false);
         grid[i][j].setColorNothing();
+        grid[i][j].setGHF();
       }
     }
   }
